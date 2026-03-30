@@ -40,6 +40,7 @@ export default function Home() {
   const [editorContent, setEditorContent] = useState(FALLBACK_YAML);
   const [isSaving, setIsSaving] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [isLoadingPipeline, setIsLoadingPipeline] = useState(false);
 
   const loadDefault = useCallback(async () => {
     try {
@@ -77,6 +78,7 @@ export default function Home() {
 
   const handleSelectPipeline = async (name: string) => {
     try {
+      setIsLoadingPipeline(true);
       setSelectedPipeline(name);
       const pipeline = await loadPipeline(name);
       setEditorContent(pipeline.yaml);
@@ -84,6 +86,8 @@ export default function Home() {
       toast.error('Failed to load pipeline', {
         description: err instanceof Error ? err.message : 'Unknown error',
       });
+    } finally {
+      setIsLoadingPipeline(false);
     }
   };
 
@@ -174,17 +178,18 @@ export default function Home() {
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Toolbar */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-background">
-          <Button onClick={handleSave} disabled={isSaving} variant="default" size="sm">
+          <Button onClick={handleSave} disabled={isSaving || isLoadingPipeline} variant="default" size="sm">
             {isSaving ? 'Saving...' : 'Save'}
           </Button>
-          <Button onClick={handleRun} disabled={isRunning} variant="secondary" size="sm">
+          <Button onClick={handleRun} disabled={isRunning || isLoadingPipeline} variant="secondary" size="sm">
             {isRunning ? 'Running...' : '▶ Run'}
           </Button>
         </div>
 
         {/* Editor */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden relative">
           <MonacoEditor
+            key={selectedPipeline ?? 'new'}
             height="100%"
             defaultLanguage="yaml"
             value={editorContent}
@@ -201,6 +206,11 @@ export default function Home() {
               padding: { top: 16, bottom: 16 },
             }}
           />
+          {isLoadingPipeline && (
+            <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+              <span className="text-sm text-muted-foreground animate-pulse">Loading pipeline…</span>
+            </div>
+          )}
         </div>
       </main>
     </div>
