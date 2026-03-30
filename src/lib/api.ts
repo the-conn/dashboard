@@ -108,3 +108,50 @@ export async function checkHealth(): Promise<{ status: string }> {
   if (!res.ok) throw new Error(`Health check failed: ${res.statusText}`);
   return res.json();
 }
+
+export interface NodeRun {
+  node: PipelineNode;
+  id: string;
+  status: string;
+  created_at: number;
+  started_at: number;
+  ended_at: number;
+}
+
+export interface PipelineRun {
+  pipeline: {
+    name: string;
+    nodes: PipelineNode[];
+    source?: unknown;
+  };
+  id: string;
+  node_runs: NodeRun[];
+  status: string;
+  created_at: number;
+  started_at: number;
+  ended_at: number;
+}
+
+export async function fetchRuns(limit = 10): Promise<PipelineRun[]> {
+  const res = await fetch(`${BASE_URL}/runs?limit=${limit}`, {
+    headers: tracingHeaders(),
+  });
+  if (!res.ok) throw new Error(`Failed to fetch runs: ${res.statusText}`);
+  return res.json();
+}
+
+export async function fetchRun(id: string): Promise<PipelineRun> {
+  const res = await fetch(`${BASE_URL}/runs/${encodeURIComponent(id)}`, {
+    headers: tracingHeaders(),
+  });
+  if (!res.ok) throw new Error(`Failed to fetch run: ${res.statusText}`);
+  return res.json();
+}
+
+export async function fetchPipelineRuns(name: string, limit = 10): Promise<PipelineRun[]> {
+  const res = await fetch(`${BASE_URL}/pipelines/${encodeURIComponent(name)}/runs?limit=${limit}`, {
+    headers: tracingHeaders(),
+  });
+  if (!res.ok) throw new Error(`Failed to fetch pipeline runs: ${res.statusText}`);
+  return res.json();
+}
