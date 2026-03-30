@@ -139,7 +139,7 @@ export default function Home() {
       {/* Sidebar */}
       <aside className="w-[280px] flex-shrink-0 border-r border-border flex flex-col bg-muted/30">
         <div className="p-4 border-b border-border">
-          <h1 className="text-lg font-semibold tracking-tight mb-3">The Conn Dashboard</h1>
+          <h1 className="text-lg font-semibold tracking-tight mb-3">The Conn</h1>
           <Button onClick={handleNew} variant="outline" size="sm" className="w-full">
             + New Pipeline
           </Button>
