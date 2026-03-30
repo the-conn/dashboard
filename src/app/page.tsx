@@ -5,26 +5,17 @@ import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { fetchPipelines, savePipeline, loadPipeline, runPipeline } from '@/lib/api';
+import { fetchPipelines, savePipeline, loadPipeline, runPipeline, getDefaultPipeline } from '@/lib/api';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
-const DEFAULT_YAML = `name: "test-pipeline"
+const FALLBACK_YAML = `name: test-pipeline
 nodes:
-  - name: "producer"
-    image: "alpine:latest"
-    environment: {}
-    steps:
-      - "echo PIPELINE_VAR=hello_from_node1 >> /workspace/.pipeline-env"
-      - "mkdir -p /workspace/output_dir"
-      - "echo 'created by node1' > /workspace/output_dir/result.txt"
-  - name: "consumer"
-    image: "alpine:latest"
-    environment: {}
-    steps:
-      - 'echo "Received: $PIPELINE_VAR"'
-      - "ls /workspace/output_dir"
-      - "cat /workspace/output_dir/result.txt"
+  name: test-node
+  image: alpine:latest
+  environment: {}
+  steps:
+    - echo "test string"
 `;
 
 export default function Home() {
@@ -32,9 +23,19 @@ export default function Home() {
   const [loadingPipelines, setLoadingPipelines] = useState(true);
   const [selectedPipeline, setSelectedPipeline] = useState<string | null>(null);
   const [pipelineName, setPipelineName] = useState('');
-  const [editorContent, setEditorContent] = useState(DEFAULT_YAML);
+  const [editorContent, setEditorContent] = useState(FALLBACK_YAML);
   const [isSaving, setIsSaving] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+
+  const loadDefault = useCallback(async () => {
+    try {
+      const yaml = await getDefaultPipeline();
+      setEditorContent(yaml);
+    } catch (err) {
+      console.error('Failed to fetch default pipeline, using fallback', err);
+      setEditorContent(FALLBACK_YAML);
+    }
+  }, []);
 
   const refreshPipelines = useCallback(async () => {
     try {
@@ -51,13 +52,14 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    loadDefault();
     refreshPipelines();
-  }, [refreshPipelines]);
+  }, [loadDefault, refreshPipelines]);
 
   const handleNew = () => {
     setSelectedPipeline(null);
     setPipelineName('');
-    setEditorContent(DEFAULT_YAML);
+    loadDefault();
   };
 
   const handleSelectPipeline = async (name: string) => {
